@@ -1,0 +1,23 @@
+{
+  "name": "micfai/marketo-php",
+  "description": "PHP Library for Marketo",
+  "keywords": [
+    "marketo",
+    "sdk"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Michael Fairchild",
+      "homepage": "https://www.mfairchildesigns.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.4"
+  },
+  "autoload": {
+    "psr-0": {
+      "Marketo": ["src"]
+    }
+  }
+}
