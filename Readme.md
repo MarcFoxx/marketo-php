@@ -49,5 +49,5 @@ Access Marketo from the Facade or Binding
 ```
  $lead = Marketo::getLead('type','value');
 
- $lead = app('Marketo')->etLead('type','value');
+ $lead = app('Marketo')->getLead('type','value');
 ```

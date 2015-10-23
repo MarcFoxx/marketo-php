@@ -5,6 +5,10 @@ namespace Marketo;
 class Marketo
 {
 
+    const CLIENT_TZ = 'America/Los_Angeles';
+
+    const MKTOWS_NAMESPACE = 'http://www.marketo.com/mktows/';
+
     protected $accessKey;
 
     protected $secretKey;
