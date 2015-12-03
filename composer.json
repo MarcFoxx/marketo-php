@@ -1,6 +1,6 @@
 {
   "name": "micfai/marketo-php",
-  "description": "PHP Library for Marketo",
+  "description": "PHP Library for Marketo's SOAP API",
   "keywords": [
     "marketo",
     "sdk"
