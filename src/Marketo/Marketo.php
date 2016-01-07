@@ -19,14 +19,19 @@ class Marketo
 
     public function __construct($config = array())
     {
-        if (isset($config['accessKey'])) $this->accessKey = $config['accessKey'];
-        if (isset($config['secretKey'])) $this->secretKey = $config['secretKey'];
-        if (isset($config['soapEndPoint'])) $this->url = $config['soapEndPoint'];
+        if(isset( $config['accessKey'] )) $this->accessKey = $config['accessKey'];
+        if(isset( $config['secretKey'] )) $this->secretKey = $config['secretKey'];
+        if(isset( $config['soapEndPoint'] )) $this->url = $config['soapEndPoint'];
 
 
-        $options = array("trace" => true, "connection_timeout" => 20, "location" => $this->url);
-        $wsdlUri = $this->url . '?WSDL';
-        $this->soapClient = new \SoapClient($wsdlUri, $options);
+        $options = array( "trace" => true, "connection_timeout" => 20, "location" => $this->url );
+        if(isset( $config['WSDL'] ) && $config['WSDL'] != '') {
+            $wsdlUri = $config['WSDL'];
+        } else {
+            $wsdlUri = $this->url . '?WSDL';
+        }
+
+        $this->soapClient = new \SoapClient( $wsdlUri, $options );
 
     }
 
@@ -36,31 +41,33 @@ class Marketo
         $attr = new Attribute();
         $attr->attrName = $name;
         $attr->attrValue = $value;
+
         return $attr;
     }
 
     private function _getAuthenticationHeader($paramName)
     {
-        $dtzObj = new \DateTimeZone(self::CLIENT_TZ);
-        $dtObj = new \DateTime('now', $dtzObj);
-        $timestamp = $dtObj->format(DATE_W3C);
+        $dtzObj = new \DateTimeZone( self::CLIENT_TZ );
+        $dtObj = new \DateTime( 'now', $dtzObj );
+        $timestamp = $dtObj->format( DATE_W3C );
         $encryptString = $timestamp . $this->accessKey;
-        $signature = hash_hmac('sha1', $encryptString, $this->secretKey);
+        $signature = hash_hmac( 'sha1', $encryptString, $this->secretKey );
         $attrs = new \stdClass();
         $attrs->mktowsUserId = $this->accessKey;
         $attrs->requestSignature = $signature;
         $attrs->requestTimestamp = $timestamp;
-        $soapHdr = new \SoapHeader(self::MKTOWS_NAMESPACE, 'AuthenticationHeader', $attrs);
+        $soapHdr = new \SoapHeader( self::MKTOWS_NAMESPACE, 'AuthenticationHeader', $attrs );
+
         return $soapHdr;
     }
 
     private function _getAuthenticationHeaderWithContext($paramName, $contextName = NULL)
     {
-        $dtzObj = new \DateTimeZone(self::CLIENT_TZ);
-        $dtObj = new \DateTime('now', $dtzObj);
-        $timestamp = $dtObj->format(DATE_W3C);
+        $dtzObj = new \DateTimeZone( self::CLIENT_TZ );
+        $dtObj = new \DateTime( 'now', $dtzObj );
+        $timestamp = $dtObj->format( DATE_W3C );
         $encryptString = $timestamp . $this->accessKey;
-        $signature = hash_hmac('sha1', $encryptString, $this->secretKey);
+        $signature = hash_hmac( 'sha1', $encryptString, $this->secretKey );
         $attrs = new \stdClass();
         $attrs->mktowsUserId = $this->accessKey;
         $attrs->requestSignature = $signature;
@@ -68,8 +75,9 @@ class Marketo
         $context = new \stdClass();
         $context->targetWorkspace = $contextName;
         $soapHdr = array();
-        $soapHdr[] = new \SoapHeader(self::MKTOWS_NAMESPACE, 'MktowsContextHeader', $context);
-        $soapHdr[] = new \SoapHeader(self::MKTOWS_NAMESPACE, 'AuthenticationHeader', $attrs);
+        $soapHdr[] = new \SoapHeader( self::MKTOWS_NAMESPACE, 'MktowsContextHeader', $context );
+        $soapHdr[] = new \SoapHeader( self::MKTOWS_NAMESPACE, 'AuthenticationHeader', $attrs );
+
         return $soapHdr;
     }
 
@@ -82,49 +90,50 @@ class Marketo
         $params = new paramsGetLead();
         $params->leadKey = $leadKey;
         $options = array();
-        $authHdr = $this->_getAuthenticationHeader('paramsGetLead');
+        $authHdr = $this->_getAuthenticationHeader( 'paramsGetLead' );
         try {
-            $success = $this->soapClient->__soapCall('getLead', array($params), $options, $authHdr);
+            $success = $this->soapClient->__soapCall( 'getLead', array( $params ), $options, $authHdr );
             $resp = $this->soapClient->__getLastResponse();
-        } catch (SoapFault $ex) {
+        } catch(SoapFault $ex) {
             $ok = false;
             $errCode = 1;
             $faultCode = null;
-            if (!empty($ex->detail->serviceException->code)) {
+            if(!empty( $ex->detail->serviceException->code )) {
                 $errCode = $ex->detail->serviceException->code;
             }
-            if (!empty($ex->faultCode)) {
+            if(!empty( $ex->faultCode )) {
                 $faultCode = $ex->faultCode;
             }
-            switch ($errCode) {
+            switch($errCode) {
                 case mktWsError::ERR_LEAD_NOT_FOUND:
                     $ok = true;
                     $success = false;
                     break;
                 default:
             }
-            if (!$ok) {
-                if ($faultCode != null) {
-                    if (strpos($faultCode, 'Client')) {
-                    } else if (strpos($faultCode, 'Server')) {
+            if(!$ok) {
+                if($faultCode != null) {
+                    if(strpos( $faultCode, 'Client' )) {
+                    } else if(strpos( $faultCode, 'Server' )) {
                     } else {
                     }
                 } else {
                 }
             }
-        } catch (Exception $ex) {
+        } catch(Exception $ex) {
             $msg = $ex->getMessage();
             $req = $this->soapClient->__getLastRequest();
-            var_dump($ex);
-            exit(1);
+            var_dump( $ex );
+            exit( 1 );
         }
+
         return $success;
     }
 
     public function syncLead($leadId, $email, $marketoCookie, $attrs, $contextName = false)
     {
         $attrArray = array();
-        foreach ($attrs as $attrName => $attrValue) {
+        foreach($attrs as $attrName => $attrValue) {
             $a = new Attribute();
             $a->attrName = $attrName;
             $a->attrValue = $attrValue;
@@ -134,10 +143,10 @@ class Marketo
         $aryOfAttr->attribute = $attrArray;
         $leadRec = new LeadRecord();
         $leadRec->leadAttributeList = $aryOfAttr;
-        if (!empty($leadId)) {
+        if(!empty( $leadId )) {
             $leadRec->Id = $leadId;
         }
-        if (!empty($email)) {
+        if(!empty( $email )) {
             $leadRec->Email = $email;
         }
         $params = new paramsSyncLead();
@@ -145,45 +154,46 @@ class Marketo
         $params->returnLead = true;
         $params->marketoCookie = $marketoCookie;
         $options = array();
-        if ($contextName) {
-            $authHdr = $this->_getAuthenticationHeaderWithContext('paramsGetLead', $contextName);
+        if($contextName) {
+            $authHdr = $this->_getAuthenticationHeaderWithContext( 'paramsGetLead', $contextName );
         } else {
-            $authHdr = $this->_getAuthenticationHeader('paramsGetLead');
+            $authHdr = $this->_getAuthenticationHeader( 'paramsGetLead' );
         }
-        $this->soapClient->__setSoapHeaders($authHdr);
+        $this->soapClient->__setSoapHeaders( $authHdr );
         try {
-            $success = $this->soapClient->__soapCall('syncLead', array($params), $options);
+            $success = $this->soapClient->__soapCall( 'syncLead', array( $params ), $options );
             $resp = $this->soapClient->__getLastResponse();
-        } catch (SoapFault $ex) {
+        } catch(SoapFault $ex) {
             $ok = false;
             $errCode = 1;
             $faultCode == null;
-            if (!empty($ex->detail->serviceException->code)) {
+            if(!empty( $ex->detail->serviceException->code )) {
                 $errCode = $ex->detail->serviceException->code;
             }
-            if (!empty($ex->faultCode)) {
+            if(!empty( $ex->faultCode )) {
                 $faultCode = $ex->faultCode;
             }
-            switch ($errCode) {
+            switch($errCode) {
                 case mktWsError::ERR_LEAD_SYNC_FAILED:
                     break;
                 default:
             }
-            if (!$ok) {
-                if ($faultCode != null) {
-                    if (strpos($faultCode, 'Client')) {
-                    } else if (strpos($faultCode, 'Server')) {
+            if(!$ok) {
+                if($faultCode != null) {
+                    if(strpos( $faultCode, 'Client' )) {
+                    } else if(strpos( $faultCode, 'Server' )) {
                     } else {
                     }
                 } else {
                 }
             }
-        } catch (Exception $ex) {
+        } catch(Exception $ex) {
             $msg = $ex->getMessage();
             $req = $this->soapClient->__getLastRequest();
-            var_dump($ex);
-            exit(1);
+            var_dump( $ex );
+            exit( 1 );
         }
+
         return $success;
     }
 
@@ -196,37 +206,37 @@ class Marketo
         $leadKey->keyValue = $leadEmail;
 
         $leadList = new ArrayOfLeadKey();
-        $leadList->leadKey = array($leadKey);
+        $leadList->leadKey = array( $leadKey );
 
         $params = new paramsRequestCampaign();
         $params->campaignId = $campId;
         $params->leadList = $leadList;
         $params->source = 'MKTOWS';
 
-        $authHdr = $this->_getAuthenticationHeader('paramsRequestCampaign');
+        $authHdr = $this->_getAuthenticationHeader( 'paramsRequestCampaign' );
 
         try {
-            $success = $this->soapClient->__soapCall('requestCampaign', array($params), $options, $authHdr);
+            $success = $this->soapClient->__soapCall( 'requestCampaign', array( $params ), $options, $authHdr );
 
-            if (isset($success->result->success)) {
+            if(isset( $success->result->success )) {
                 $retStat = $success->result->success;
             }
-        } catch (SoapFault $ex) {
+        } catch(SoapFault $ex) {
             $ok = false;
-            $errCode = !empty($ex->detail->serviceException->code) ? $ex->detail->serviceException->code : 1;
-            $faultCode = !empty($ex->faultCode) ? $ex->faultCode : null;
-            switch ($errCode) {
+            $errCode = !empty( $ex->detail->serviceException->code ) ? $ex->detail->serviceException->code : 1;
+            $faultCode = !empty( $ex->faultCode ) ? $ex->faultCode : null;
+            switch($errCode) {
                 case mktWsError::ERR_LEAD_NOT_FOUND:
                     // Handle error for campaign not found
                     break;
                 default:
                     // Handle other errors
             }
-            if (!$ok) {
-                if ($faultCode != null) {
-                    if (strpos($faultCode, 'Client')) {
+            if(!$ok) {
+                if($faultCode != null) {
+                    if(strpos( $faultCode, 'Client' )) {
                         // This is a client error.  Check the other codes and handle.
-                    } else if (strpos($faultCode, 'Server')) {
+                    } else if(strpos( $faultCode, 'Server' )) {
                         // This is a server error.  Call Marketo support with details.
                     } else {
                         // W3C spec has changed <img src="http://ahmeddirie.com/wp-includes/images/smilies/icon_smile.gif" alt=":)" class="wp-smiley">
@@ -236,13 +246,14 @@ class Marketo
                     // Not a good place to be.
                 }
             }
-        } catch (Exception $ex) {
+        } catch(Exception $ex) {
             $msg = $ex->getMessage();
             $req = $this->soapClient->__getLastRequest();
             echo "Error occurred for request: $msg\n$req\n";
-            var_dump($ex);
-            exit(1);
+            var_dump( $ex );
+            exit( 1 );
         }
+
         return $retStat;
     }
 }
@@ -533,47 +544,5 @@ class successSyncLead
 
 class MktowsXmlSchema
 {
-    static public
-        $class_map = array(
-        "ActivityRecord" => "ActivityRecord",
-        "ActivityTypeFilter" => "ActivityTypeFilter",
-        "Attribute" => "Attribute",
-        "AuthenticationHeaderInfo" => "AuthenticationHeaderInfo",
-        "CampaignRecord" => "CampaignRecord",
-        "LeadActivityList" => "LeadActivityList",
-        "LeadChangeRecord" => "LeadChangeRecord",
-        "LeadKey" => "LeadKey",
-        "LeadRecord" => "LeadRecord",
-        "LeadStatus" => "LeadStatus",
-        "ListKey" => "ListKey",
-        "ResultGetCampaignsForSource" => "ResultGetCampaignsForSource",
-        "ResultGetLead" => "ResultGetLead",
-        "ResultGetLeadChanges" => "ResultGetLeadChanges",
-        "ResultListOperation" => "ResultListOperation",
-        "ResultRequestCampaign" => "ResultRequestCampaign",
-        "ResultSyncLead" => "ResultSyncLead",
-        "StreamPosition" => "StreamPosition",
-        "ArrayOfActivityRecord" => "ArrayOfActivityRecord",
-        "ArrayOfActivityType" => "ArrayOfActivityType",
-        "ArrayOfAttribute" => "ArrayOfAttribute",
-        "ArrayOfBase64Binary" => "ArrayOfBase64Binary",
-        "ArrayOfCampaignRecord" => "ArrayOfCampaignRecord",
-        "ArrayOfLeadChangeRecord" => "ArrayOfLeadChangeRecord",
-        "ArrayOfLeadKey" => "ArrayOfLeadKey",
-        "ArrayOfLeadRecord" => "ArrayOfLeadRecord",
-        "ArrayOfLeadStatus" => "ArrayOfLeadStatus",
-        "paramsGetCampaignsForSource" => "paramsGetCampaignsForSource",
-        "paramsGetLead" => "paramsGetLead",
-        "paramsGetLeadActivity" => "paramsGetLeadActivity",
-        "paramsGetLeadChanges" => "paramsGetLeadChanges",
-        "paramsListOperation" => "paramsListOperation",
-        "paramsRequestCampaign" => "paramsRequestCampaign",
-        "paramsSyncLead" => "paramsSyncLead",
-        "successGetCampaignsForSource" => "successGetCampaignsForSource",
-        "successGetLead" => "successGetLead",
-        "successGetLeadActivity" => "successGetLeadActivity",
-        "successGetLeadChanges" => "successGetLeadChanges",
-        "successListOperation" => "successListOperation",
-        "successRequestCampaign" => "successRequestCampaign",
-        "successSyncLead" => "successSyncLead");
+    static public $class_map = array( "ActivityRecord" => "ActivityRecord", "ActivityTypeFilter" => "ActivityTypeFilter", "Attribute" => "Attribute", "AuthenticationHeaderInfo" => "AuthenticationHeaderInfo", "CampaignRecord" => "CampaignRecord", "LeadActivityList" => "LeadActivityList", "LeadChangeRecord" => "LeadChangeRecord", "LeadKey" => "LeadKey", "LeadRecord" => "LeadRecord", "LeadStatus" => "LeadStatus", "ListKey" => "ListKey", "ResultGetCampaignsForSource" => "ResultGetCampaignsForSource", "ResultGetLead" => "ResultGetLead", "ResultGetLeadChanges" => "ResultGetLeadChanges", "ResultListOperation" => "ResultListOperation", "ResultRequestCampaign" => "ResultRequestCampaign", "ResultSyncLead" => "ResultSyncLead", "StreamPosition" => "StreamPosition", "ArrayOfActivityRecord" => "ArrayOfActivityRecord", "ArrayOfActivityType" => "ArrayOfActivityType", "ArrayOfAttribute" => "ArrayOfAttribute", "ArrayOfBase64Binary" => "ArrayOfBase64Binary", "ArrayOfCampaignRecord" => "ArrayOfCampaignRecord", "ArrayOfLeadChangeRecord" => "ArrayOfLeadChangeRecord", "ArrayOfLeadKey" => "ArrayOfLeadKey", "ArrayOfLeadRecord" => "ArrayOfLeadRecord", "ArrayOfLeadStatus" => "ArrayOfLeadStatus", "paramsGetCampaignsForSource" => "paramsGetCampaignsForSource", "paramsGetLead" => "paramsGetLead", "paramsGetLeadActivity" => "paramsGetLeadActivity", "paramsGetLeadChanges" => "paramsGetLeadChanges", "paramsListOperation" => "paramsListOperation", "paramsRequestCampaign" => "paramsRequestCampaign", "paramsSyncLead" => "paramsSyncLead", "successGetCampaignsForSource" => "successGetCampaignsForSource", "successGetLead" => "successGetLead", "successGetLeadActivity" => "successGetLeadActivity", "successGetLeadChanges" => "successGetLeadChanges", "successListOperation" => "successListOperation", "successRequestCampaign" => "successRequestCampaign", "successSyncLead" => "successSyncLead" );
 }
